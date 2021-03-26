@@ -1,4 +1,5 @@
 
+
 /* INCLUDES FOR THIS PROJECT */
 #include <iostream>
 #include <fstream>
@@ -7,6 +8,8 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <algorithm>
+#include <numeric>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -14,6 +17,7 @@
 #include <opencv2/xfeatures2d.hpp>
 #include <opencv2/xfeatures2d/nonfree.hpp>
 
+#include "InputParser.h"
 #include "dataStructures.h"
 #include "matching2D.hpp"
 #include "objectDetection2D.hpp"
@@ -25,6 +29,42 @@ using namespace std;
 /* MAIN PROGRAM */
 int main(int argc, const char *argv[])
 {
+    bool bVis = false;
+    std::vector<std::string> detectorarray = {"SHITOMASI"};
+    std::vector<std::string> descriptorarray = {"BRISK"};
+    string matcherType = "MAT_BF";   // MAT_BF, MAT_FLANN
+    string selectorType = "SEL_NN";  // SEL_NN, SEL_KNN
+    InputParser input(argc, argv);
+    if (input.cmdOptionExists("-v"))
+    {
+        bVis = true;
+    }
+    const std::string &detectorTypeParsed = input.getCmdOption("-d");
+    if (!detectorTypeParsed.empty())
+    {
+        detectorarray[0] = detectorTypeParsed;
+    }
+    const std::string &extractorTypeParsed = input.getCmdOption("-e");
+    if (!extractorTypeParsed.empty())
+    {
+        descriptorarray[0] = extractorTypeParsed;
+    }
+    if (input.cmdOptionExists("-knn"))
+    {
+        selectorType = "SEL_KNN";
+    }
+    if (input.cmdOptionExists("-flann"))
+    {
+        matcherType = "MAT_FLANN";
+    }
+    if(input.cmdOptionExists("-auto"))
+    {
+        bVis = false;
+        selectorType = "SEL_KNN";
+        detectorarray = {"SHITOMASI", "HARRIS", "FAST", "BRISK", "ORB", "AKAZE", "SIFT"};
+        descriptorarray = {"BRISK", "BRIEF", "ORB", "FREAK", "AKAZE", "SIFT"};
+    }
+    
     /* INIT VARIABLES AND DATA STRUCTURES */
 
     // data location
@@ -72,7 +112,7 @@ int main(int argc, const char *argv[])
     double sensorFrameRate = 10.0 / imgStepWidth; // frames per second for Lidar and camera
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
     vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
-    bool bVis = false;            // visualize results
+    bVis = false;            // visualize results
 
     /* MAIN LOOP OVER ALL IMAGES */
 
